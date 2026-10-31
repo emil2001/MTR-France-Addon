@@ -32,7 +32,7 @@ public class MTRFranceAddonRegistryClient {
     }
 
     public static void setupPacketClient() {
-        REGISTRY_CLIENT.setupPackets(Constants.id("packet"));
+        REGISTRY_CLIENT.setupPackets(Constants.PACKET_ID);
     }
 
     // Taken from MTR

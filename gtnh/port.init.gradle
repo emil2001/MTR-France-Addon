@@ -1,0 +1,154 @@
+// Build against the prepared Forge mapping project; never run the modern upstream build.
+allprojects { project ->
+    afterEvaluate {
+        if (!project.plugins.hasPlugin('com.gtnewhorizons.retrofuturagradle')) return
+        def franceRoot = file(providers.gradleProperty('franceRoot').get())
+        def workspace = franceRoot.parentFile.parentFile.parentFile
+        def sourceRoot = file(providers.gradleProperty('franceSourceRoot').getOrElse(franceRoot.absolutePath))
+        def mtrDev = file(providers.gradleProperty('franceMtrDev').get())
+        if (!mtrDev.isFile()) throw new GradleException("Missing MTR development JAR: ${mtrDev}")
+        def staged = new File(franceRoot, 'gtnh/build/staged-resources')
+        def nativeMods = new File(workspace, 'work/mtr-port/client/data/instances/MTR-GTNH-Port/.minecraft/mods')
+        sourceSets.create('france') {
+            java.srcDir new File(sourceRoot, 'fabric/src/main/java')
+            java.srcDir new File(franceRoot, 'gtnh/src/main/java')
+            java.include 'fr/mtrfranceaddon/mod/**', 'fr/mtrfranceaddon/gtnh/**'
+            resources.srcDir staged
+            resources.srcDir new File(franceRoot, 'gtnh/src/main/resources')
+            resources.exclude 'fabric.mod.json', 'mtrfranceaddon.mixins.json'
+            compileClasspath += files(mtrDev) + sourceSets.main.output + sourceSets.main.compileClasspath + fileTree(nativeMods) { include '+unimixins*.jar' }
+            runtimeClasspath = output + compileClasspath
+        }
+        dependencies.add('franceCompileOnly', 'org.jetbrains:annotations:24.0.1')
+        tasks.register('prepareFranceResources', Exec) {
+            inputs.dir new File(franceRoot, 'fabric/src/main/resources')
+            inputs.file new File(franceRoot, 'gtnh/prepare_resources.py')
+            inputs.file new File(franceRoot, 'gtnh/upstream-resource-gaps.json')
+            outputs.dir staged
+            commandLine 'python3', new File(franceRoot, 'gtnh/prepare_resources.py'), new File(franceRoot, 'fabric/src/main/resources'), staged
+        }
+        tasks.named('processFranceResources') { dependsOn tasks.named('prepareFranceResources') }
+        tasks.named('compileFranceJava') {
+            dependsOn tasks.named('classes')
+            options.release = 8
+            options.compilerArgs += ['-proc:none', '-Xmaxerrs', '200']
+        }
+        sourceSets.create('franceTest') {
+            java.srcDir new File(franceRoot, 'gtnh/src/test/java')
+            compileClasspath += sourceSets.france.output + sourceSets.france.compileClasspath + sourceSets.test.runtimeClasspath
+            runtimeClasspath = output + compileClasspath
+        }
+        tasks.named('compileFranceTestJava') {
+            dependsOn tasks.named('testClasses')
+            options.release = 8
+            options.compilerArgs += ['-proc:none']
+        }
+        ['blocks', 'declarations', 'packetStartup'].each { scenario ->
+            tasks.register("france${scenario.capitalize()}Check", JavaExec) {
+                dependsOn tasks.named('franceTestClasses')
+                classpath = sourceSets.franceTest.runtimeClasspath
+                mainClass = 'org.mtr.mapping.FranceBehaviorScenarios'
+                args scenario
+                jvmArgs '-Djava.awt.headless=true'
+                doFirst { systemProperty 'mtr.testClasspath', classpath.asPath }
+            }
+        }
+        ['BlockResource', 'Recipe'].each { scenario ->
+            tasks.register("france${scenario}Check", JavaExec) {
+                dependsOn tasks.named('franceTestClasses')
+                classpath = sourceSets.franceTest.runtimeClasspath
+                mainClass = "org.mtr.mapping.France${scenario}Scenarios"
+                jvmArgs '-Djava.awt.headless=true'
+                doFirst { systemProperty 'mtr.testClasspath', classpath.asPath }
+            }
+        }
+        tasks.register('franceResourceCheck', Exec) {
+            dependsOn tasks.named('reobfFranceJar')
+            commandLine 'python3', new File(franceRoot, 'gtnh/prepare_resources.py'), '--validate',
+                new File(franceRoot, 'gtnh/build/libs/MTR-France-Addon-GTNH-1.2.0-gtnh.0.jar'), '--mtr', mtrDev
+        }
+        tasks.register('franceMappingCheck', Test) {
+            dependsOn tasks.named('franceTestClasses')
+            testClassesDirs = sourceSets.test.output.classesDirs
+            classpath = sourceSets.franceTest.runtimeClasspath
+            useJUnitPlatform()
+            include '**/FranceMappingCompatibilityTest.class'
+            doFirst { systemProperty 'mtr.testClasspath', classpath.asPath }
+        }
+        tasks.register('franceCheck') { dependsOn 'franceBlocksCheck', 'franceDeclarationsCheck', 'francePacketStartupCheck', 'franceMappingCheck', 'franceResourceCheck', 'franceBlockResourceCheck', 'franceRecipeCheck' }
+        sourceSets.create('franceProbe') {
+            java.srcDir new File(franceRoot, 'gtnh/src/probe/java')
+            compileClasspath += sourceSets.france.output + sourceSets.france.compileClasspath
+            runtimeClasspath = output + compileClasspath
+        }
+        tasks.named('compileFranceProbeJava') {
+            options.release = 8
+            options.incremental = false
+            options.compilerArgs += ['-proc:none']
+        }
+        tasks.register('franceProbeJar', Jar) {
+            from sourceSets.franceProbe.output
+            archiveBaseName = 'France-native-probe'
+            archiveVersion = '0'
+            archiveClassifier = 'dev'
+            destinationDirectory = new File(franceRoot, 'gtnh/build/probe')
+        }
+        tasks.named('reobfFranceProbeJar') {
+            referenceClasspath.from(sourceSets.franceProbe.compileClasspath)
+            archiveBaseName = 'France-native-probe'
+            archiveVersion = '0'
+            archiveClassifier = ''
+            destinationDirectory = new File(franceRoot, 'gtnh/build/probe')
+        }
+        sourceSets.create('franceJourney') {
+            java.srcDir new File(franceRoot, 'gtnh/src/journey/java')
+            compileClasspath += sourceSets.france.output + sourceSets.france.compileClasspath
+            runtimeClasspath = output + compileClasspath
+        }
+        tasks.named('compileFranceJourneyJava') {
+            options.release = 8
+            options.incremental = false
+            options.compilerArgs += ['-proc:none']
+        }
+        tasks.register('franceJourneyJar', Jar) {
+            from sourceSets.franceJourney.output
+            archiveBaseName = 'France-journey-probe'
+            archiveVersion = '0'
+            archiveClassifier = 'dev'
+            destinationDirectory = new File(franceRoot, 'gtnh/build/probe')
+        }
+        tasks.named('reobfFranceJourneyJar') {
+            referenceClasspath.from(sourceSets.franceJourney.compileClasspath)
+            archiveBaseName = 'France-journey-probe'
+            archiveVersion = '0'
+            archiveClassifier = ''
+            destinationDirectory = new File(franceRoot, 'gtnh/build/probe')
+        }
+        tasks.register('franceJar', Jar) {
+            from sourceSets.france.output
+            from(new File(franceRoot, 'LICENSE.txt')) {
+                into 'META-INF/licenses'
+                rename { 'MTR-France-Addon-LICENSE.txt' }
+            }
+            from(new File(franceRoot, 'README.md')) {
+                into 'META-INF/licenses'
+                rename { 'MTR-France-Addon-upstream-credits.md' }
+            }
+            archiveBaseName = 'MTR-France-Addon-GTNH'
+            archiveVersion = '1.2.0-gtnh.0'
+            archiveClassifier = 'dev'
+            destinationDirectory = new File(franceRoot, 'gtnh/build/libs')
+            manifest {
+                attributes 'FMLCorePlugin': 'fr.mtrfranceaddon.gtnh.FranceLoadingPlugin',
+                    'FMLCorePluginContainsFMLMod': 'true', 'Implementation-Version': '1.2.0-gtnh.0'
+            }
+        }
+        tasks.named('reobfFranceJar') {
+            referenceClasspath.from(sourceSets.france.compileClasspath)
+            archiveBaseName = 'MTR-France-Addon-GTNH'
+            archiveVersion = '1.2.0-gtnh.0'
+            archiveClassifier = ''
+            destinationDirectory = new File(franceRoot, 'gtnh/build/libs')
+        }
+    }
+}

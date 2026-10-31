@@ -10,7 +10,9 @@ public class Constants {
 
     public static final String MOD_ID = "mtrfranceaddon";
     public static final String MOD_NAME = "MTR France Addon";
-    public static final String MOD_VERSION = "1.1.0";
+    public static final String MOD_VERSION = "1.2.0-gtnh.0";
+    // Native Forge channel names, including the namespace, are limited to 20 characters.
+    public static final Identifier PACKET_ID = id("pkt");
 
     /**
      * Method to create an Identifier based on the MOD_ID.

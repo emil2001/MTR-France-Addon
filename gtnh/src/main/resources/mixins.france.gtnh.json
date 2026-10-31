@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "fr.mtrfranceaddon.mod.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["RailTypeMixin", "ArrivalsCacheServerMixin"],
+  "client": [],
+  "injectors": {"defaultRequire": 1}
+}

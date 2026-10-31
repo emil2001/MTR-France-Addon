@@ -60,6 +60,7 @@ public class InvisiblePlatform extends BlockPlatform implements BlockWithEntity 
 
     }
 
+    @cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
     public static class InvPlatRenderer extends BlockEntityRenderer<InvPlatBE> {
 
         public InvPlatRenderer(Argument dispatcher) {

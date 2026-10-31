@@ -1,0 +1,13 @@
+[
+  {
+    "modid": "mtrfranceaddon",
+    "name": "MTR France Addon",
+    "description": "French trains, station blocks, signs and rail tools for the GTNH port of Minecraft Transit Railway.",
+    "version": "1.2.0-gtnh.0",
+    "mcversion": "1.7.10",
+    "url": "https://github.com/MTR-France-Team/MTR-France-Addon",
+    "authorList": ["Team MTR France"],
+    "credits": "Original addon by Team MTR France; Minecraft Transit Railway by the MTR team.",
+    "requiredMods": ["mtr@[4.0.5-gtnh.17,)"]
+  }
+]

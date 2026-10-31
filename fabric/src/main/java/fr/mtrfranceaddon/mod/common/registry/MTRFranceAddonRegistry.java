@@ -24,7 +24,7 @@ public class MTRFranceAddonRegistry {
     }
 
     public static void setupPacket() {
-        REGISTRY.setupPackets(Constants.id("packet"));
+        REGISTRY.setupPackets(Constants.PACKET_ID);
     }
 
     /**

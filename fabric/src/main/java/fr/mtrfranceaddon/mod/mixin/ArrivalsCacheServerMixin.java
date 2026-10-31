@@ -5,7 +5,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
-@Mixin(ArrivalsCacheServer.class)
+@Mixin(value = ArrivalsCacheServer.class, remap = false)
 public class ArrivalsCacheServerMixin {
 
     @ModifyArg(

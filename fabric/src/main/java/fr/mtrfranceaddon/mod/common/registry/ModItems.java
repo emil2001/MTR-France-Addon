@@ -9,6 +9,7 @@ import org.mtr.mod.data.RailType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 public class ModItems {
 
@@ -24,7 +25,7 @@ public class ModItems {
     }
 
     private static void registerRailModifier(CustomRailData.RailInfo info, boolean isOneWay) {
-        String itemId = info.name.toLowerCase() + (isOneWay ? "_oneway" : "");
+        String itemId = info.name.toLowerCase(Locale.ROOT) + (isOneWay ? "_oneway" : "");
 
         ItemRegistryObject registeredItem = MTRFranceAddonRegistry.registerItem(
                 itemId,
