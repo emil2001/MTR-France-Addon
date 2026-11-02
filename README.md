@@ -1,5 +1,7 @@
 # MTR France Addon
 
+This branch contains the Forge 1.7.10 / GT New Horizons port. Use the [GTNH installation and build guide](gtnh/README.md). The upstream project guide follows below.
+
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.16.5--1.20.4-green.svg)](https://minecraft.net/)
 [![MTR](https://img.shields.io/badge/MTR-4.0.0+-blue.svg)](https://minecrafttransitrailway.com/)
 ![Fabric](https://img.shields.io/badge/Fabric-Supported-blue.svg)
